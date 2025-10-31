@@ -28,7 +28,7 @@ public class ResumeController {
         if (all.isEmpty()) {
             return repository.save(new ResumeStats());
         }
-        return all.all.get(0);
+        return all.get(0);
     }
 
     @GetMapping("/download")
