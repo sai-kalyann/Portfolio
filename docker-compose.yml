@@ -1,0 +1,154 @@
+version: "3.9"
+
+services:
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - portfolio-network
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "5000:5000"
+    depends_on:
+      - eureka-server
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - DB_URL=jdbc:postgresql://user-db:5432/users
+      - DB_USER=portfolio
+      - DB_PASSWORD=portfolio
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production-min-256-bits
+    networks:
+      - portfolio-network
+    depends_on:
+      - user-db
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - portfolio-network
+
+  project-service:
+    build: ./project-service
+    container_name: project-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+      - project-db
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - DB_URL=jdbc:postgresql://project-db:5432/projects
+      - DB_USER=portfolio
+      - DB_PASSWORD=portfolio
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production-min-256-bits
+    networks:
+      - portfolio-network
+
+  contact-service:
+    build: ./contact-service
+    container_name: contact-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-server
+      - contact-db
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - DB_URL=jdbc:postgresql://contact-db:5432/contacts
+      - DB_USER=portfolio
+      - DB_PASSWORD=portfolio
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production-min-256-bits
+    networks:
+      - portfolio-network
+
+  resume-service:
+    build: ./resume-service
+    container_name: resume-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-server
+      - resume-db
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - DB_URL=jdbc:postgresql://resume-db:5432/resume
+      - DB_USER=portfolio
+      - DB_PASSWORD=portfolio
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production-min-256-bits
+    networks:
+      - portfolio-network
+
+  project-db:
+    image: postgres:16-alpine
+    container_name: project-db
+    environment:
+      - POSTGRES_DB=projects
+      - POSTGRES_USER=portfolio
+      - POSTGRES_PASSWORD=portfolio
+    ports:
+      - "5433:5432"
+    networks:
+      - portfolio-network
+
+  contact-db:
+    image: postgres:16-alpine
+    container_name: contact-db
+    environment:
+      - POSTGRES_DB=contacts
+      - POSTGRES_USER=portfolio
+      - POSTGRES_PASSWORD=portfolio
+    ports:
+      - "5434:5432"
+    networks:
+      - portfolio-network
+
+  resume-db:
+    image: postgres:16-alpine
+    container_name: resume-db
+    environment:
+      - POSTGRES_DB=resume
+      - POSTGRES_USER=portfolio
+      - POSTGRES_PASSWORD=portfolio
+    ports:
+      - "5435:5432"
+    networks:
+      - portfolio-network
+
+  user-db:
+    image: postgres:16-alpine
+    container_name: user-db
+    environment:
+      - POSTGRES_DB=users
+      - POSTGRES_USER=portfolio
+      - POSTGRES_PASSWORD=portfolio
+    ports:
+      - "5436:5432"
+    networks:
+      - portfolio-network
+
+  frontend:
+    build: ./frontend
+    container_name: portfolio-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_BASE=http://api-gateway:8080
+    depends_on:
+      - api-gateway
+    networks:
+      - portfolio-network
+networks:
+  portfolio-network:
+    driver: bridge
